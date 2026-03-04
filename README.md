@@ -2,7 +2,7 @@
 
 Un pipeline **Retrieval-Augmented Generation (RAG)** minimaliste, construit from scratch en Python sans framework (pas de LangChain, pas de LlamaIndex).
 
-Le but : comprendre chaque brique du RAG en les codant soi-même.
+Le but : comprendre chaque brique du RAG en les codant soi-meme, puis comparer avec une approche framework (CrewAI).
 
 ## Comment ca marche ?
 
@@ -28,19 +28,24 @@ Question + Chunks pertinents → LLM → Reponse    (generation)
 | pypdf | Extraction de texte depuis les PDFs |
 | tiktoken | Comptage de tokens pour le decoupage |
 | python-dotenv | Chargement des variables d'environnement |
+| CrewAI | Framework multi-agents (approche comparative) |
 
 ## Structure du projet
 
 ```
 python-rag/
-├── documents/          # Deposer vos PDFs ici
-├── src/
-│   ├── 01_ingest.py    # Chunking + embedding + stockage ChromaDB
-│   ├── 02_search.py    # Recherche semantique sur une question
-│   └── 03_generate.py  # Generation LLM avec les chunks recuperes
-├── chroma_db/          # Base vectorielle (generee automatiquement)
+├── documents/              # Deposer vos PDFs ici
+├── src/                    # Approche "from scratch"
+│   ├── 01_ingest.py        #   Chunking + embedding + stockage ChromaDB
+│   ├── 02_search.py        #   Recherche semantique sur une question
+│   └── 03_generate.py      #   Generation LLM avec les chunks recuperes
+├── crewai-rag/             # Approche CrewAI (multi-agents)
+│   ├── hello_world.py      #   Exercice 1 : un agent simple
+│   ├── deux_agents.py      #   Exercice 2 : deux agents qui collaborent
+│   └── rag_crewai.py       #   RAG complet avec CrewAI + ChromaDB
+├── chroma_db/              # Base vectorielle (generee automatiquement)
 ├── requirements.txt
-├── .env                # Cle API OpenAI (a creer, non versionne)
+├── .env                    # Cle API OpenAI (a creer, non versionne)
 └── README.md
 ```
 
@@ -115,6 +120,48 @@ Pose une question, recupere les chunks pertinents, puis genere une reponse via g
 ```bash
 python src/03_generate.py "Qui a invente l'iPhone ?"
 ```
+
+## Approche CrewAI (multi-agents)
+
+Le dossier `crewai-rag/` contient une version alternative du RAG utilisant le framework **CrewAI**, qui orchestre plusieurs agents IA.
+
+### Installer CrewAI
+
+```bash
+pip install crewai
+```
+
+### Les exercices
+
+**Exercice 1 — Un agent simple** (`hello_world.py`) : un seul agent qui repond a une question.
+
+```bash
+python crewai-rag/hello_world.py
+```
+
+**Exercice 2 — Deux agents** (`deux_agents.py`) : un Researcher cherche des infos, un Writer redige a partir du resultat.
+
+```bash
+python crewai-rag/deux_agents.py
+```
+
+**Exercice 3 — RAG avec CrewAI** (`rag_crewai.py`) : un Researcher interroge ChromaDB via un tool custom, puis un Writer synthetise la reponse.
+
+```bash
+python crewai-rag/rag_crewai.py
+```
+
+### Comparaison des deux approches
+
+| | From scratch (`src/`) | CrewAI (`crewai-rag/`) |
+|---|---|---|
+| **Controle** | Total, chaque etape est explicite | Le framework orchestre les agents |
+| **Complexite** | Faible, 3 scripts simples | Plus de code, mais plus modulaire |
+| **Multi-agents** | Non | Oui (Researcher + Writer) |
+| **Apprentissage** | Comprendre les briques du RAG | Comprendre l'orchestration d'agents |
+| **Dependencies** | openai, chromadb, pypdf | + crewai |
+
+Les deux approches utilisent la **meme base ChromaDB** : il faut lancer `python src/01_ingest.py` avant d'utiliser `rag_crewai.py`.
 
 ## Configuration
 
