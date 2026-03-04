@@ -5,25 +5,23 @@ Prend une question, l'embed via OpenAI, et retourne
 les 3 chunks les plus proches avec leur score de similarité.
 """
 
-import os
 import sys
+from pathlib import Path
 
 import chromadb
+from dotenv import load_dotenv
 from openai import OpenAI
 
+load_dotenv()
+
 # --- Configuration ---
-CHROMA_DIR = "chroma_db"
+CHROMA_DIR = Path(__file__).resolve().parent.parent / "chroma_db"
 COLLECTION_NAME = "documents"
-MODEL_EMBEDDING = "text-embedding-3-small"
+EMBEDDING_MODEL = "text-embedding-3-small"
 TOP_K = 3
 
-# --- Vérification clé API ---
-if not os.getenv("OPENAI_API_KEY"):
-    print("Erreur : OPENAI_API_KEY non définie.")
-    sys.exit(1)
-
 client_openai = OpenAI()
-client_chroma = chromadb.PersistentClient(path=CHROMA_DIR)
+client_chroma = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
 # --- Récupération de la collection ---
 try:
@@ -36,14 +34,17 @@ except Exception:
 print(f"Collection '{COLLECTION_NAME}' : {collection.count()} chunks indexés.\n")
 
 # --- Question ---
-question = "Quels sont les principaux monuments historiques d'Istanbul ?"
+if len(sys.argv) > 1:
+    question = sys.argv[1]
+else:
+    question = input("Pose ta question : ")
 
 print(f"Question : {question}\n")
 
 # --- Embedding de la question ---
 response = client_openai.embeddings.create(
     input=question,
-    model=MODEL_EMBEDDING,
+    model=EMBEDDING_MODEL,
 )
 query_embedding = response.data[0].embedding
 
@@ -64,7 +65,7 @@ if not documents:
     sys.exit(0)
 
 for i, (doc, dist, meta) in enumerate(zip(documents, distances, metadatas), 1):
-    # ChromaDB retourne des distances L2 par défaut ;
+    # La collection utilise la distance cosine (configurée dans 01_ingest.py) ;
     # plus la distance est petite, plus le chunk est pertinent.
     print(f"--- Résultat {i} (distance : {dist:.4f}) ---")
     if meta:

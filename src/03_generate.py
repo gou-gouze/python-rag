@@ -3,15 +3,19 @@
 envoie le tout à gpt-4o-mini pour obtenir une réponse contextualisée.
 """
 
-import os
 import sys
+from pathlib import Path
 
 import chromadb
+from dotenv import load_dotenv
 from openai import OpenAI
 
+load_dotenv()
+
 # --- Configuration ---
-CHROMA_DIR = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
+CHROMA_DIR = Path(__file__).resolve().parent.parent / "chroma_db"
 COLLECTION_NAME = "documents"
+EMBEDDING_MODEL = "text-embedding-3-small"
 N_RESULTS = 3
 
 # --- Récupération de la question ---
@@ -22,14 +26,20 @@ if len(sys.argv) < 2:
 question = sys.argv[1]
 
 # --- Recherche des chunks pertinents (même logique que 02_search.py) ---
-client_chroma = chromadb.PersistentClient(path=CHROMA_DIR)
-collection = client_chroma.get_collection(name=COLLECTION_NAME)
+client_chroma = chromadb.PersistentClient(path=str(CHROMA_DIR))
+
+try:
+    collection = client_chroma.get_collection(name=COLLECTION_NAME)
+except Exception:
+    print(f"Erreur : collection '{COLLECTION_NAME}' introuvable dans {CHROMA_DIR}/.")
+    print("Lance d'abord 01_ingest.py pour indexer des documents.")
+    sys.exit(1)
 
 # Embedding de la question via OpenAI
 client_openai = OpenAI()
 embedding_resp = client_openai.embeddings.create(
     input=question,
-    model="text-embedding-3-small",
+    model=EMBEDDING_MODEL,
 )
 query_embedding = embedding_resp.data[0].embedding
 
@@ -59,7 +69,7 @@ response = client_openai.chat.completions.create(
         {"role": "system", "content": "Tu es un assistant qui répond en français en se basant sur le contexte fourni."},
         {"role": "user", "content": prompt},
     ],
-    temperature=0.3,
+    temperature=0.1,
 )
 
 # --- Affichage de la réponse ---
