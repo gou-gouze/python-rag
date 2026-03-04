@@ -19,13 +19,19 @@ EMBEDDING_MODEL = "text-embedding-3-small"
 N_RESULTS = 3
 
 # --- Récupération de la question ---
-if len(sys.argv) < 2:
-    print("Usage : python 03_generate.py \"Votre question ici\"")
+if len(sys.argv) > 1:
+    question = sys.argv[1]
+else:
+    question = input("Pose ta question : ")
+
+if not question.strip():
+    print("Erreur : question vide.")
     sys.exit(1)
 
-question = sys.argv[1]
+print(f"\nQuestion : {question}")
 
 # --- Recherche des chunks pertinents (même logique que 02_search.py) ---
+print(f"Chargement de ChromaDB depuis {CHROMA_DIR}...")
 client_chroma = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
 try:
@@ -35,7 +41,10 @@ except Exception:
     print("Lance d'abord 01_ingest.py pour indexer des documents.")
     sys.exit(1)
 
+print(f"Collection trouvée : {collection.count()} chunks indexés.")
+
 # Embedding de la question via OpenAI
+print("Embedding de la question...")
 client_openai = OpenAI()
 embedding_resp = client_openai.embeddings.create(
     input=question,
@@ -50,6 +59,7 @@ results = collection.query(
 )
 
 chunks = results["documents"][0]
+print(f"Recherche terminée : {len(chunks)} chunk(s) récupéré(s).")
 
 # --- Construction du prompt ---
 contexte = "\n---\n".join(chunks)
@@ -62,7 +72,7 @@ Extraits :
 
 Question : {question}"""
 
-# --- Appel à gpt-4o-mini ---
+print("Appel à gpt-4o-mini...")
 response = client_openai.chat.completions.create(
     model="gpt-4o-mini",
     messages=[

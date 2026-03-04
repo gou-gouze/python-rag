@@ -18,7 +18,7 @@ load_dotenv()
 CHROMA_DIR = Path(__file__).resolve().parent.parent / "chroma_db"
 COLLECTION_NAME = "documents"
 EMBEDDING_MODEL = "text-embedding-3-small"
-TOP_K = 3
+TOP_K = 10
 
 client_openai = OpenAI()
 client_chroma = chromadb.PersistentClient(path=str(CHROMA_DIR))
