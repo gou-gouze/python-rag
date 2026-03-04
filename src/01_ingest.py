@@ -8,7 +8,6 @@ Pour chaque PDF dans /documents :
   4. Sauvegarder dans une collection ChromaDB
 """
 
-import os
 import sys
 from pathlib import Path
 
